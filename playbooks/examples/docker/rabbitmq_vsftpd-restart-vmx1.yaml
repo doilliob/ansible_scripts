@@ -1,0 +1,16 @@
+---
+- hosts: vmx1
+  tasks:
+    - name: Restart container VsFTPD
+      docker_container:
+        name: vsftpd
+        state: started
+        restart: yes
+      become: yes
+
+    - name: Restart container RabbitMQ
+      docker_container:
+        name: rabbitmq
+        state: started
+        restart: yes
+      become: yes

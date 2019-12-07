@@ -1,0 +1,14 @@
+---
+- hosts: vmx1
+  tasks:
+    - name: Stop container BigBlueButton
+      docker_container:
+        name: bbb
+        state: stopped
+      become: yes
+
+    - name: Remove container BigBlueButton
+      docker_container:
+        name: bbb
+        state: absent
+      become: yes

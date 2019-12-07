@@ -1,0 +1,9 @@
+---
+- hosts: vmx1
+  tasks:
+    - name: Restart container GiTea
+      docker_container:
+        name: gitea
+        state: started
+        restart: yes
+      become: yes

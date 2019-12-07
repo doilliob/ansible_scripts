@@ -1,0 +1,14 @@
+---
+- hosts: vmx1
+  tasks:
+    - name: Stop container GiTea
+      docker_container:
+        name: gitea
+        state: stopped
+      become: yes
+
+    - name: Remove container GiTea
+      docker_container:
+        name: gitea
+        state: absent
+      become: yes

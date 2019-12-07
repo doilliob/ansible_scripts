@@ -1,0 +1,16 @@
+---
+- hosts: vmx1
+  tasks:
+    - name: Restart container MongoDB
+      docker_container:
+        name: rocketchat_db
+        state: started
+        restart: yes
+      become: yes
+
+    - name: Restart container Rocket.Chat
+      docker_container:
+        name: rocketchat_server
+        state: started
+        restart: yes
+      become: yes

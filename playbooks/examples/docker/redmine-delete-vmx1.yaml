@@ -1,0 +1,26 @@
+---
+- hosts: vmx1
+  tasks:
+    - name: Stop container Postgres10
+      docker_container:
+        name: redmine_db
+        state: stopped
+      become: yes
+
+    - name: Stop container Redmine
+      docker_container:
+        name: redmine_server
+        state: stopped
+      become: yes
+
+    - name: Remove container Postgres10
+      docker_container:
+        name: redmine_db
+        state: absent
+      become: yes
+
+    - name: Remove container Redmine
+      docker_container:
+        name: redmine_server
+        state: absent
+      become: yes

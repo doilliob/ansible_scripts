@@ -1,0 +1,30 @@
+---
+- hosts: vmx1
+  tasks:
+    - name: Make VsFTPD container
+      docker_container:
+        name: vsftpd
+        image: 'fauria/vsftpd'
+        network_mode: host
+        volumes:
+          - '/mnt/backup/video/accreditation/2019/in:/home/vsftpd/admin/in'
+          - '/mnt/backup/video/accreditation/2019/out:/home/vsftpd/admin/out'
+        env:
+          - FTP_USER: admin
+          - FTP_PASS: admin
+          - PASV_ADDRESS: 192.168.0.3
+          - PASV_MIN_PORT: 21100
+          - PASV_MAX_PORT: 30110
+      become: yes
+
+    - name: Make RRabbitMQ container
+      docker_container:
+        name: rabbitmq
+        image: 'rabbitmq:3-management'
+        ports:
+          - '8080:15672'
+          - '5672:5672'
+        env:
+          - RABBITMQ_DEFAULT_USER: TZBgaW3bDtYXRno5
+          - RABBITMQ_DEFAULT_PASS: N0uArziqiLWTsfsn
+      become: yes

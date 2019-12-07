@@ -1,0 +1,23 @@
+---
+- hosts: vmx1
+  tasks:
+    - name: Make MongoDB container
+      docker_container:
+        name: rocketchat_db
+        image: mongo:3.2
+        volumes:
+          - '/home/docker/rocketchat:/data/db'
+      become: yes
+
+    - name: Make Rocket.Chat container
+      docker_container:
+        name: rocketchat_server
+        image: rocket.chat
+        hostname: "chat.smedk.ru"
+        links:
+          - "rocketchat_db:db"
+        ports:
+          - "4444:3000"
+        env:
+          ROOT_URL: "http://chat.smedk.ru:4444"          
+      become: yes

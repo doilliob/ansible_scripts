@@ -1,0 +1,31 @@
+---
+- hosts: vmx1
+  vars:
+    prefix: "{{ansible_date_time.date}}_{{ansible_date_time.time}}"
+    # VMX2 PG settings
+    login_host: "{{services.vmx2.postgresql.postgresql_host}}"
+    login_user: "{{services.vmx2.postgresql.postgresql_user}}"
+    login_password: "{{services.vmx2.postgresql.postgresql_password}}"
+    # Local settings
+    local_backup_dir: "{{services.vmx1.settings.backup_1c_dir}}"
+  tasks:
+    - name: Get PostgreSQL list of DBs
+      postgresql_info:
+        login_host: "{{login_host}}"
+        login_user: "{{login_user}}"
+        login_password: "{{login_password}}"
+        filter:
+        - "databases"
+      register: pgsql_db_names
+
+    - name: Dump database to a file (with compression) 
+      postgresql_db:
+        login_host: "{{login_host}}"
+        login_user: "{{login_user}}"
+        login_password: "{{login_password}}"
+        name: "{{item}}"
+        state: dump
+        target: "{{local_backup_dir}}/{{item}}_{{prefix}}.sql.gz"
+      with_items: "{{pgsql_db_names.databases}}"
+      become: yes
+      

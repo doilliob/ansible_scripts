@@ -1,0 +1,24 @@
+#!groovy
+
+properties([disableConcurrentBuilds()])
+
+pipeline {
+    agent {
+ 	label 'master'
+    }
+    options {
+	buildDiscarder(logRotator(numToKeepStr: '12', artifactNumToKeepStr: '12'))
+	timestamps()
+    }
+    // Запуск по расписанию 1 раз в месяц 1 числа
+    triggers { cron('15 3 1 * *') }
+    stages {
+	// Запуск секции 
+        stage('Start backups') {
+           steps {
+		// Запустить подготовленную секцию
+                sh 'ansible-playbook -i hosts.yaml playbooks/backup/moodle.yaml' 
+            }
+        }
+   }
+}

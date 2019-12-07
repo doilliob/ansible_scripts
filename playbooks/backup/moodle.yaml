@@ -1,0 +1,54 @@
+---
+- hosts: smedk 
+  vars:
+    home_dir: "{{ services.smedk.settings.home_dir }}"
+    mysql_db_name: "{{ services.smedk.mysql.moodle.mysql_db_name }}"
+    mysql_db_user: "{{ services.smedk.mysql.moodle.mysql_db_user }}"
+    mysql_db_pass: "{{ services.smedk.mysql.moodle.mysql_db_pass }}"
+    mysql_db_file: "mysql.sql"
+    backup_dir:  "{{ services.smedk.ftp.ftp_moodle_dir }}"
+    dt_prefix: "{{ ansible_date_time.date }}"
+  
+  tasks:
+    - name: Backup MySQL database
+      mysql_db:
+        state: dump 
+        name: "{{ mysql_db_name }}"
+        login_user: "{{ mysql_db_user }}"
+        login_password: "{{ mysql_db_pass }}"
+        target: "{{ home_dir }}/{{ backup_dir }}/{{ mysql_db_file }}.gz"
+        
+- hosts: vmx1 
+  vars:
+    dt_prefix: "{{ ansible_date_time.date }}"
+    ftp_host: "{{ services.smedk.ftp.ftp_host }}"
+    ftp_user: "{{ services.smedk.ftp.ftp_user }}"
+    ftp_pass: "{{ services.smedk.ftp.ftp_pass }}"
+    ftp_folder: "{{ services.smedk.ftp.ftp_moodle_dir }}"
+    local_backup_dir: "{{ services.vmx1.settings.backup_moodle_dir }}"
+    local_backup_file: "sdo_{{ dt_prefix }}"
+ 
+  tasks:
+    - name: Create backup dir
+      file: 
+        path: "{{ local_backup_dir }}/{{ local_backup_file }}"
+        state: directory
+      become: yes
+
+    - name: Wget files
+      shell: "wget -r -l 0 -c -k --user={{ ftp_user }} --password={{ ftp_pass }} --directory-prefix={{ local_backup_dir }}/{{ local_backup_file }}  ftp://{{ ftp_host }}/{{ ftp_folder }}"
+      become: yes
+
+    - name: Gzip backup folder
+      archive:
+         path: "{{ local_backup_dir }}/{{ local_backup_file }}"
+         dest: "{{ local_backup_dir }}/{{ local_backup_file }}.tar.gz"
+         format: gz
+      become: yes
+
+    - name: Remove uncompressed directory
+      file:
+        path: "{{ local_backup_dir }}/{{ local_backup_file }}"
+        state: absent
+      become: yes
+

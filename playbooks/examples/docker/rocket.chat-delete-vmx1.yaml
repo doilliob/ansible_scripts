@@ -1,0 +1,26 @@
+---
+- hosts: vmx1
+  tasks:
+    - name: Stop container MongoDB
+      docker_container:
+        name: rocketchat_db
+        state: stopped
+      become: yes
+
+    - name: Stop container Rocket.Chat
+      docker_container:
+        name: rocketchat_server
+        state: stopped
+      become: yes
+
+    - name: Remove container MongoDB
+      docker_container:
+        name: rocketchat_db
+        state: absent
+      become: yes
+
+    - name: Remove container Rocket.Chat
+      docker_container:
+        name: rocketchat_server
+        state: absent
+      become: yes

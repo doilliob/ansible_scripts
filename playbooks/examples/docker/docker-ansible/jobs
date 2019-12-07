@@ -1,0 +1,17 @@
+# m h dom mon dow user	command
+
+# создается резервная копия сайта 
+00 01 * * * 	root	ansible-playbook -i /ansible/hosts.yaml /ansible/site.yaml >> /var/log/cron.log 2>&1
+
+# Ежемесячное сохранение копии СДО
+00 02 20 * *	root	ansible-playbook -i /ansible/hosts.yaml /ansible/moodle.yaml >> /var/log/cron.log 2>&1
+
+# Ежемесячное резервирование конфигурации сервера
+00 01 01 * *  root  	ansible-playbook -i /ansible/hosts.yaml /ansible/configuration.yaml >> /var/log/cron.log 2>&1
+
+*/1 * * * *	root 	echo 1 >> /var/log/cron.log 
+
+
+
+#
+#

@@ -1,0 +1,41 @@
+---
+- hosts: vmx1
+  vars:
+
+    container_name: 'jenkins'
+    jenkins_home_dir: "{{services.vmx1.jenkins.jenkins_home_dir}}"
+
+  tasks:
+
+    - name: Check existings of old Jenkins container
+      docker_container_info:
+        name: "{{ container_name }}"
+      become: yes
+      register: result
+
+    - name: Stop old Jenkins container
+      docker_container:
+        name: "{{ container_name }}"
+        state: stopped
+        force_kill: yes
+      become: yes
+      when: result.exists
+
+    - name: Remove old Jenkins container
+      docker_container:
+        name: "{{ container_name }}"
+        state: absent
+      become: yes
+      when: result.exists
+      
+    - name: Starting Jenkins
+      docker_container:
+        name: '{{ container_name }}'
+        image: 'jenkins/jenkins:lts'
+        ports:
+          - '8080:8080'
+          - '50000:50000'
+        volumes:
+          - '{{jenkins_home_dir}}:/var/jenkins_home'
+          - '/etc/localtime:/etc/localtime'
+      become: yes

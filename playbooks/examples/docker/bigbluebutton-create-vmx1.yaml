@@ -1,0 +1,16 @@
+---
+- hosts: vmx1
+  tasks:
+    - name: Make BigBlueButton container
+      docker_container:
+        name: bbb
+        hostname: "web.smedk.ru"
+        image: bigbluebutton/bigbluebutton:latest
+        ports:
+          - '443:443/tcp'
+          - '80:80/tcp'
+          - '1935:1935'
+          - '5066:5066'
+          - '3478:3478'
+          - '3478:3478/udp'
+      become: yes

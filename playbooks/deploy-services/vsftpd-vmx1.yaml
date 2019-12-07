@@ -1,0 +1,54 @@
+---
+- hosts: vmx1
+  vars:
+    container_name: 'vsftpd'
+    ftp_host: "{{services.vmx1.ftp.ftp_host}}"
+    ftp_user: "{{services.vmx1.ftp.ftp_user}}"
+    ftp_pass: "{{services.vmx1.ftp.ftp_pass}}"
+    ftp_site_dir: "{{services.vmx1.ftp.ftp_site_dir}}"
+    ftp_moodle_dir: "{{services.vmx1.ftp.ftp_moodle_dir}}"
+    ftp_1c_dir: "{{services.vmx1.ftp.ftp_1c_dir}}"
+    ftp_conf_dir: "{{services.vmx1.ftp.ftp_conf_dir}}"
+    backup_site_dir: "{{services.vmx1.settings.backup_site_dir}}"
+    backup_moodle_dir: "{{services.vmx1.settings.backup_moodle_dir}}"
+    backup_1c_dir:   "{{services.vmx1.settings.backup_1c_dir}}"
+    backup_conf_dir:   "{{services.vmx1.settings.backup_conf_dir}}"
+  tasks:
+    - name: Check existings of old VsFTPD container
+      docker_container_info:
+        name: "{{ container_name }}"
+      become: yes
+      register: result
+
+    - name: Stop old VsFTPD container
+      docker_container:
+        name: "{{ container_name }}"
+        state: stopped
+        force_kill: yes
+      become: yes
+      when: result.exists
+
+    - name: Remove old VsFTPD container
+      docker_container:
+        name: "{{ container_name }}"
+        state: absent
+      become: yes
+      when: result.exists
+      
+    - name: Make VsFTPD container
+      docker_container:
+        name: "{{container_name}}"
+        image: 'fauria/vsftpd'
+        network_mode: host
+        volumes:
+          - '{{backup_conf_dir}}:/home/vsftpd/{{ftp_user}}/{{ftp_conf_dir}}'
+          - '{{backup_site_dir}}:/home/vsftpd/{{ftp_user}}/{{ftp_site_dir}}'
+          - '{{backup_moodle_dir}}:/home/vsftpd/{{ftp_user}}/{{ftp_moodle_dir}}'
+          - '{{backup_1c_dir}}:/home/vsftpd/{{ftp_user}}/{{ftp_1c_dir}}'
+        env:
+          FTP_USER: "{{ftp_user}}"
+          FTP_PASS: "{{ftp_pass}}"
+          PASV_ADDRESS: "192.168.0.3"
+          PASV_MIN_PORT: "21100"
+          PASV_MAX_PORT: "30110"
+      become: yes

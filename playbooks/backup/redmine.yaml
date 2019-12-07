@@ -1,0 +1,68 @@
+---
+- hosts: vmx1
+  vars:
+    container_server_name: 'redmine_server'
+    container_db_name: 'redmine_db'
+    local_db_dir: "{{ services.vmx1.redmine.local_db_dir }}"
+    local_files_dir: "{{ services.vmx1.redmine.local_files_dir }}" 
+    backup_redmine_dir: "{{ services.vmx1.settings.backup_redmine_dir }}"
+    prefix: "{{ansible_date_time.date}}_{{ansible_date_time.time}}"
+  tasks:
+    
+    # Check -----
+    - name: Check existings of PostgreSQL container
+      docker_container_info:
+        name: "{{ container_db_name }}"
+      become: yes
+      register: result_db
+
+    - name: Check existings of Redmine container
+      docker_container_info:
+        name: "{{ container_server_name }}"
+      become: yes
+      register: result_server
+
+    # Stop -----
+
+    - name: Stop PostgreSQL container
+      docker_container:
+        name: "{{ container_db_name }}"
+        state: stopped
+        force_kill: yes
+      become: yes
+      when: result_db.exists
+    
+    - name: Stop Redmine container
+      docker_container:
+        name: "{{ container_server_name }}"
+        state: stopped
+        force_kill: yes
+      become: yes
+      when: result_server.exists
+
+    # Archive -----
+    - name: Compress DB and files to local HDD
+      archive:
+        path: 
+          - "{{local_db_dir}}"
+          - "{{local_files_dir}}"
+        dest: "{{backup_redmine_dir}}/redmine_{{prefix}}.tar.gz"
+        format: gz
+      become: yes
+    
+    # Started -----
+
+    - name: Start PostgreSQL container
+      docker_container:
+        name: "{{ container_db_name }}"
+        state: started
+      become: yes
+      when: result_db.exists
+    
+    - name: Start Redmine container
+      docker_container:
+        name: "{{ container_server_name }}"
+        state: started
+        force_kill: yes
+      become: yes
+      when: result_server.exists

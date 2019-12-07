@@ -1,0 +1,24 @@
+#!groovy
+
+properties([disableConcurrentBuilds()])
+
+pipeline {
+    agent {
+ 	label 'master'
+    }
+    options {
+	buildDiscarder(logRotator(numToKeepStr: '1', artifactNumToKeepStr: '1'))
+	timestamps()
+    }
+    // Запуск по расписанию каждый день в 01:00
+    triggers { cron('15 1 * * *') }
+    stages {
+	// Запуск секции 
+        stage('Start backups') {
+           steps {
+		// Запустить подготовленную секцию
+                sh 'ansible-playbook -i hosts.yaml playbooks/backup/configurations.yaml' 
+            }
+        }
+   }
+}

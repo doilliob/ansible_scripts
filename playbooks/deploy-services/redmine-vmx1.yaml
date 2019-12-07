@@ -1,0 +1,89 @@
+---
+- hosts: vmx1
+  vars:
+    container_server_name: 'redmine_server'
+    container_db_name: 'redmine_db'
+    local_db_dir: "{{ services.vmx1.redmine.local_db_dir }}"
+    local_files_dir: "{{ services.vmx1.redmine.local_files_dir }}"
+  tasks:
+    
+    # Check -----
+    - name: Check existings of old PostgreSQL 10 container
+      docker_container_info:
+        name: "{{ container_db_name }}"
+      become: yes
+      register: result_db
+
+    - name: Check existings of old Redmine container
+      docker_container_info:
+        name: "{{ container_server_name }}"
+      become: yes
+      register: result_server
+
+    # Stop -----
+
+    - name: Stop old PostgreSQL 10 container
+      docker_container:
+        name: "{{ container_db_name }}"
+        state: stopped
+        force_kill: yes
+      become: yes
+      when: result_db.exists
+    
+    - name: Stop old Redmine container
+      docker_container:
+        name: "{{ container_server_name }}"
+        state: stopped
+        force_kill: yes
+      become: yes
+      when: result_server.exists
+
+    # Remove -----
+
+    - name: Remove old PostgreSQL container
+      docker_container:
+        name: "{{ container_db_name }}"
+        state: absent
+      become: yes
+      when: result_db.exists
+    
+    - name: Remove old Redmine container
+      docker_container:
+        name: "{{ container_server_name }}"
+        state: absent
+      become: yes
+      when: result_server.exists
+
+   # Run -----
+    
+    - name: Make PostgreSQL 10 container
+      docker_container:
+        name: "{{ container_db_name }}"
+        image: postgres:10
+        network_mode: bridge
+        volumes:
+          - '{{local_db_dir}}:/var/lib/postgresql/data'
+        env:
+          POSTGRES_USER: "redmine"
+          POSTGRES_PASSWORD: "OvGS6fz57eSGA2avO"
+          POSTGRES_DB: "redmine"
+      become: yes
+
+    - name: Make Redmine container
+      docker_container:
+        name: "{{ container_server_name }}"
+        image: redmine
+        hostname: "redmine.smedk.ru"
+        links:
+          - "redmine_db"
+        ports:
+          - "3000:3000"
+        volumes:
+          - '{{local_files_dir}}:/usr/src/redmine/files'
+        env:
+          REDMINE_DB_POSTGRES: "redmine_db"
+          REDMINE_DB_PORT: "5432"
+          REDMINE_DB_USERNAME: "redmine"
+          REDMINE_DB_PASSWORD: "OvGS6fz57eSGA2avO"
+          REDMINE_DB_DATABASE: "redmine"
+      become: yes

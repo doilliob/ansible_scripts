@@ -1,0 +1,26 @@
+---
+- hosts: vmx1
+  tasks:
+    - name: Stop container VsFTPD
+      docker_container:
+        name: vsftpd
+        state: stopped
+      become: yes
+
+    - name: Stop container RabbitMQ
+      docker_container:
+        name: rabbitmq
+        state: stopped
+      become: yes
+
+    - name: Remove container VsFTPD
+      docker_container:
+        name: vsftpd
+        state: absent
+      become: yes
+
+    - name: Remove container RabbitMQ
+      docker_container:
+        name: rabbitmq
+        state: absent
+      become: yes

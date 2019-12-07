@@ -1,0 +1,26 @@
+#!groovy
+
+properties([disableConcurrentBuilds()])
+
+pipeline {
+    agent {
+    	label 'master'
+    }
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '7', artifactNumToKeepStr: '7'))
+        timestamps()
+    }
+    // Запуск по расписанию каждый день в 01:00
+    triggers { 
+        cron('15 02 01 * *') 
+    }
+    stages {
+	// Запуск секции 
+        stage('Start backups RocketChat') {
+           steps {
+		// Запустить подготовленную секцию
+                sh 'ansible-playbook -i hosts.yaml playbooks/backup/rocketchat.yaml' 
+            }
+        }
+   }
+}

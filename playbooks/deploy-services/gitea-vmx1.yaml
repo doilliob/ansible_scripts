@@ -1,0 +1,35 @@
+---
+- hosts: vmx1
+  vars:
+    container_name: 'gitea'
+  tasks:
+    - name: Check existings of old GiTea container
+      docker_container_info:
+        name: "{{ container_name }}"
+      become: yes
+      register: result
+
+    - name: Stop old GiTea container
+      docker_container:
+        name: "{{ container_name }}"
+        state: stopped
+        force_kill: yes
+      become: yes
+      when: result.exists
+
+    - name: Remove old GiTea container
+      docker_container:
+        name: "{{ container_name }}"
+        state: absent
+      become: yes
+      when: result.exists
+
+    - name: Make GiTea container
+      docker_container:
+        name: "{{ container_name }}"
+        image: gitea/gitea:1.8.3
+        ports:
+          - "3001:3000"
+        volumes:
+          - '/mnt/backup/git:/data'
+      become: yes

@@ -1,0 +1,119 @@
+---
+- hosts: vmx1
+  vars:
+    image_name: "cron-ansible"
+    container_name: "ansible"
+    temp_dir_name: "cron-ansible"
+
+  tasks:
+    - name: Mkdir for docker build
+      file:
+        path: "/tmp/{{ temp_dir_name }}"
+        state: directory
+      become: yes
+
+    - name: Copy file /Dockerfile/ to remote
+      copy:
+        src: ./Dockerfile
+        dest: "/tmp/{{ temp_dir_name }}"
+      become: yes
+
+    - name: Copy file /jobs/ to remote
+      copy:
+       src: ./jobs
+       dest: "/tmp/{{ temp_dir_name }}"
+      become: yes
+
+    - name: Copy file /known_hosts/ to remote
+      copy:
+       src: ~/.ssh/known_hosts
+       dest: "/tmp/{{ temp_dir_name }}"
+      become: yes
+
+    - name: Copy file /hosts.yaml/ to remote
+      copy:
+        src: ../../../hosts.yaml
+        dest: "/tmp/{{ temp_dir_name }}"
+      become: yes
+
+    - name: Copy file /site.yaml/ to remote
+      copy:
+        src: ../../backup/site.yaml
+        dest: "/tmp/{{ temp_dir_name }}"
+      become: yes
+
+    - name: Copy file /moodle/ to remote
+      copy:
+        src: ../../backup/moodle.yaml
+        dest: "/tmp/{{ temp_dir_name }}"
+      become: yes
+
+    - name: Copy file /configurations/ to remote
+      copy:
+        src: ../../backup/configurations.yaml
+        dest: "/tmp/{{ temp_dir_name }}"
+      become: yes
+
+    - name: Check existings of Old Container 
+      docker_container_info:
+        name: "{{ container_name }}"
+      become: yes
+      register: result
+
+    - name: Stop Old Ansible Container  
+      docker_container:
+        name: "{{ container_name }}"
+        state: stopped
+        force_kill: yes
+      become: yes
+      when: result.exists
+
+    - name: Remove Old Ansible Container
+      docker_container:
+        name: "{{ container_name }}"
+        state: absent
+      become: yes
+      when: result.exists
+
+    - name: Check existings of Old Image
+      docker_image_info:
+        name: "{{ image_name }}"
+      become: yes
+      register: result_image
+
+
+    - name: Remove Ansible docker image
+      docker_image:
+        name: "{{ image_name }}"
+        state: absent
+      become: yes
+      when: result_image.images | length > 0 
+
+    - name: Build Ansible docker image
+      docker_image:
+        build:
+          path: "/tmp/{{ temp_dir_name }}"
+          pull: yes
+        name: "{{ image_name }}"
+        source: build
+      become: yes
+
+    - name: Delete temp directory
+      file:
+        path: "/tmp/{{ temp_dir_name }}"
+        state: absent
+      become: yes
+
+    - name: Run Ansible container
+      docker_container:
+        name: "{{ container_name }}"
+        image: "{{ image_name }}"
+        recreate: yes
+        volumes:
+          - "/etc/timezone:/etc/timezone:ro"
+          - "/etc/localtime:/etc/localtime:ro"
+          - '/mnt/backup/site/daily:/mnt/backup/site/daily'
+          - '/mnt/backup/sdo:/mnt/backup/sdo'
+          - '/mnt/backup/configurations:/mnt/backup/configurations'
+      become: yes
+

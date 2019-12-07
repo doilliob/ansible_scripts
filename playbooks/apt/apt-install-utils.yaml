@@ -1,0 +1,13 @@
+---
+- hosts: production-servers
+  tasks:
+    - name: Install CURL
+      apt:
+        pkg: curl
+      become: yes
+
+    - name: Install wget
+      apt:
+        pkg: wget
+      become: yes
+

@@ -1,0 +1,78 @@
+---
+- hosts: vmx1
+  vars:
+    container_server_name: 'rocketchat_server'
+    container_db_name: 'rocketchat_db'
+    local_db_dir: "{{ services.vmx1.rocketchat.local_db_dir }}"
+  tasks:
+    
+    # Check -----
+    - name: Check existings of old MongoDB container
+      docker_container_info:
+        name: "{{ container_db_name }}"
+      become: yes
+      register: result_db
+
+    - name: Check existings of old Rocket.Chat container
+      docker_container_info:
+        name: "{{ container_server_name }}"
+      become: yes
+      register: result_server
+
+    # Stop -----
+
+    - name: Stop old MongoDB container
+      docker_container:
+        name: "{{ container_db_name }}"
+        state: stopped
+        force_kill: yes
+      become: yes
+      when: result_db.exists
+    
+    - name: Stop old Rocket.Chat container
+      docker_container:
+        name: "{{ container_server_name }}"
+        state: stopped
+        force_kill: yes
+      become: yes
+      when: result_server.exists
+
+    # Remove -----
+
+    - name: Remove old MongoDB container
+      docker_container:
+        name: "{{ container_db_name }}"
+        state: absent
+      become: yes
+      when: result_db.exists
+    
+    - name: Remove old Rocket.Chat container
+      docker_container:
+        name: "{{ container_server_name }}"
+        state: absent
+      become: yes
+      when: result_server.exists
+
+   # Run -----
+    
+    - name: Make MongoDB container
+      docker_container:
+        name: '{{ container_db_name }}'
+        image: mongo:3.2
+        volumes:
+          - '{{local_db_dir}}:/data/db'
+      become: yes
+
+
+    - name: Make Rocket.Chat container
+      docker_container:
+        name: '{{ container_server_name }}'
+        image: rocket.chat
+        hostname: "chat.smedk.ru"
+        links:
+          - "rocketchat_db:db"
+        ports:
+          - "4444:3000"
+        env:
+          ROOT_URL: "http://chat.smedk.ru:4444"          
+      become: yes

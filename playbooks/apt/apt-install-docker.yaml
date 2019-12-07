@@ -1,0 +1,17 @@
+---
+- hosts: production-servers
+  tasks:
+    - name: Install docker
+      apt:
+        pkg: docker
+      become: yes
+
+    - name: Install docker-compose
+      apt:
+        pkg: docker-compose
+      become: yes
+
+    - name: Install Python-docker
+      apt:
+        pkg: python-docker
+      become: yes

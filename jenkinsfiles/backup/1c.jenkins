@@ -1,0 +1,26 @@
+#!groovy
+
+properties([disableConcurrentBuilds()])
+
+pipeline {
+    agent {
+    	label 'master'
+    }
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '14', artifactNumToKeepStr: '14'))
+        timestamps()
+    }
+    // Запуск по расписанию каждый день в 01:00
+    triggers { 
+        cron('15 03 * * *') 
+    }
+    stages {
+	// Запуск секции 
+        stage('Start backups 1C PostgreSQL DBs') {
+           steps {
+		// Запустить подготовленную секцию
+                sh 'ansible-playbook -i hosts.yaml playbooks/backup/1c.yaml' 
+            }
+        }
+   }
+}

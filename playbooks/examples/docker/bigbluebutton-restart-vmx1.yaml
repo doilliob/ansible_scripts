@@ -1,0 +1,9 @@
+---
+- hosts: vmx1
+  tasks:
+    - name: Restart container BigBlueButton
+      docker_container:
+        name: bbb
+        state: started
+        restart: yes
+      become: yes

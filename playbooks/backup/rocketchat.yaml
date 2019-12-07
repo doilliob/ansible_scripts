@@ -1,0 +1,67 @@
+---
+- hosts: vmx1
+  vars:
+    container_server_name: 'rocketchat_server'
+    container_db_name: 'rocketchat_db'
+    local_db_dir: "{{ services.vmx1.rocketchat.local_db_dir }}"
+    backup_rocketchat_dir: "{{ services.vmx1.settings.backup_rocketchat_dir }}"
+    prefix: "{{ansible_date_time.date}}_{{ansible_date_time.time}}"
+  tasks:
+    
+    # Check -----
+    - name: Check existings of MongoDB container
+      docker_container_info:
+        name: "{{ container_db_name }}"
+      become: yes
+      register: result_db
+
+    - name: Check existings of Rocket.Chat container
+      docker_container_info:
+        name: "{{ container_server_name }}"
+      become: yes
+      register: result_server
+
+    # Stop -----
+
+    - name: Stop MongoDB container
+      docker_container:
+        name: "{{ container_db_name }}"
+        state: stopped
+        force_kill: yes
+      become: yes
+      when: result_db.exists
+    
+    - name: Stop Rocket.Chat container
+      docker_container:
+        name: "{{ container_server_name }}"
+        state: stopped
+        force_kill: yes
+      become: yes
+      when: result_server.exists
+
+    # Archive -----
+    - name: Compress DB Dir to local HDD
+      archive:
+        path: "{{local_db_dir}}"
+        dest: "{{backup_rocketchat_dir}}/rocketchat_{{prefix}}.tar.gz"
+        format: gz
+      become: yes
+    
+    # Started -----
+
+    - name: Start MongoDB container
+      docker_container:
+        name: "{{ container_db_name }}"
+        state: started
+      become: yes
+      when: result_db.exists
+    
+    - name: Start Rocket.Chat container
+      docker_container:
+        name: "{{ container_server_name }}"
+        state: started
+        force_kill: yes
+      become: yes
+      when: result_server.exists
+
+  

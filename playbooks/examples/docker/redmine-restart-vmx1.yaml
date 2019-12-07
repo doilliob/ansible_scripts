@@ -1,0 +1,16 @@
+---
+- hosts: vmx1
+  tasks:
+    - name: Restart container Postgres10
+      docker_container:
+        name: redmine_db
+        state: started
+        restart: yes
+      become: yes
+
+    - name: Restart container Redmine
+      docker_container:
+        name: redmine_server
+        state: started
+        restart: yes
+      become: yes
